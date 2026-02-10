@@ -1,0 +1,41 @@
+import pandas as pd
+import numpy as np
+from itertools import product
+# Cargar dataset
+df = pd.read_csv(&quot;dataset_albert.csv&quot;)
+contadores = [&quot;C1&quot;, &quot;C2&quot;, &quot;C3&quot;, &quot;C4&quot;, &quot;C5&quot;]
+# 1) Calcular quartils
+quartils = {}
+
+for c in contadores:
+  Q1 = df[c].quantile(0.25)
+  Q2 = df[c].quantile(0.50)
+  Q3 = df[c].quantile(0.75)
+  quartils[c] = (Q1, Q2, Q3)
+print(&quot;Quartils por contador:&quot;)
+for c, q in quartils.items():
+  print(c, q)
+# 2) Recodificar cada sample en quartils
+def recodificar(valor, Q1, Q2, Q3):
+  if valor &lt;= Q1:
+    return 1
+  elif valor &lt;= Q2:
+    return 2
+  elif valor &lt;= Q3:
+    return 3
+  else:
+  return 4
+for c in contadores:
+  Q1, Q2, Q3 = quartils[c]
+  df[c+&quot;_Q&quot;] = df[c].apply(lambda x: recodificar(x, Q1, Q2, Q3))
+# Crear columna con la combinación
+df[&quot;combo&quot;] = df[[c+&quot;_Q&quot; for c in contadores]].apply(lambda row:
+tuple(row), axis=1)
+# 3) Contar benignos y malignos por combinación
+conteo = df.groupby([&quot;combo&quot;, &quot;label&quot;]).size().unstack(fill_value=0)
+print(&quot;\nConteo de combinaciones:&quot;)
+print(conteo)
+# Opcional: ordenar por número de malignos
+conteo_ordenado = conteo.sort_values(by=&quot;maligno&quot;, ascending=False)
+print(&quot;\nCombinaciones más asociadas a malignos:&quot;)
+print(conteo_ordenado.head(10))
