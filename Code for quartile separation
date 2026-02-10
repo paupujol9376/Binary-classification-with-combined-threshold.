@@ -24,7 +24,7 @@ def recodificar(valor, Q1, Q2, Q3):
   elif valor &lt;= Q3:
     return 3
   else:
-  return 4
+    return 4
 for c in contadores:
   Q1, Q2, Q3 = quartils[c]
   df[c+&quot;_Q&quot;] = df[c].apply(lambda x: recodificar(x, Q1, Q2, Q3))
