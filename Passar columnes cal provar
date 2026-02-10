@@ -1,0 +1,12 @@
+import pandas as pd
+
+# Leer el excel (una sola columna con comas)
+df = pd.read_excel("datos.xlsx", header=None)
+
+# Separar por comas en columnas
+df_separado = df[0].str.split(",", expand=True)
+
+# Guardar nuevo excel
+df_separado.to_excel("datos_separados.xlsx", index=False, header=False)
+
+print("Archivo creado: datos_separados.xlsx")
