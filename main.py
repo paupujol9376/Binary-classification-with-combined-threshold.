@@ -4,9 +4,11 @@ import glob
 import os
 
 #SEPAREM EL ZIP 
+
 dataset_albert_zip = 'dataverse_files.zip'
 with zipfile.ZipFile(dataset_albert_zip, 'r') as zip_ref:
     zip_ref.extractall('datos_albert')
+
 
 """
 ######AQUÍ ENTENEM QUE SON EL R002 I LA ESTRUCUTRA DE CADA PETICIÓ DE AL HARDWARE######
@@ -23,6 +25,9 @@ print("\n--- Primers valors del fitxer 'bitcoin' (Benigne) ---")
 print(df_mostra.head())
 """
 
+
+#PROCESAT DE DADES I ORDERNAR EL DATASET
+
 benignes =["bitcoin", "bubble", "bzip2", "coremark", "dhrystone", "ffmpeg", 
     "mandelbrot", "matrix", "mybench", "polybench", "sha256sum", 
     "sieve", "speedtest", "stream", "stress_c", "stress_m"
@@ -31,11 +36,10 @@ benignes =["bitcoin", "bubble", "bzip2", "coremark", "dhrystone", "ffmpeg",
 contadors=["r002","r003","r004","r005"]
 total_de_dades=[]
 
-# Llegim tots els CSV de la carpeta on has descomprit el ZIP
+# Llegim tots els CSV de la carpeta datos_alebrt / (dintre de datos_albert)* (qualsevol)
 for fitxer in glob.glob("datos_albert/*.csv"):
-    # Saltem la segona fila de descripcions llargues per llegir només números
+   
     df_temp = pd.read_csv(fitxer, skiprows=[1])
-    
     # Netegem els noms de les columnes per tenir només el codi rXXX
     df_temp.columns = [c.split('/')[0].strip() if '/' in c else c for c in df_temp.columns]
     
@@ -51,3 +55,5 @@ df = pd.concat(total_de_dades, ignore_index=True)
 #Vull mirar si el dataset es coherent
 df.to_csv('dataset_complet.csv', index=False)
 
+
+#QUARTILS 
