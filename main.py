@@ -99,12 +99,11 @@ print("\n Conteo de combinaciones: ")
 print(conteo)
 
 #ORDENAR
-conteo_ordenado = conteo.sort_values(by="maligno", ascending=False)    # ORDENACI PER VEURE ELQ UARTILS QUEHAN SIGUT MALIGNES
+conteo_ordenado = conteo.sort_values(by="maligne", ascending=False)    # ORDENACI PER VEURE ELQ UARTILS QUEHAN SIGUT MALIGNES
 print(" \n Combinaciones más asociadas a malignos:")
 print(conteo_ordenado.head(10))
 
-
+# Exportar el dataset final amb totes les transformacions
+df.to_csv('dataset_quartils.csv', index=False)
 
 #############################################################
-
-
