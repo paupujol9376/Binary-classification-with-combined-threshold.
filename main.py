@@ -82,7 +82,7 @@ def recodificar(valor, Q1, Q2, Q3):
    if valor <= Q1: return 1 # ZONA 1
    if valor <= Q2: return 2 # ZONA 2
    if valor <= Q3: return 3 # ZONA 3
-   else : 4 # ZONA 4
+   else : return 4 # ZONA 4
 
 
 for c in contadors:
@@ -107,3 +107,4 @@ print(conteo_ordenado.head(10))
 df.to_csv('dataset_quartils.csv', index=False)
 
 #############################################################
+
