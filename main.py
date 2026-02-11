@@ -2,6 +2,8 @@ import pandas as pd
 import zipfile
 import glob
 import os
+import numpy as np
+from itertools import product
 
 #SEPAREM EL ZIP 
 
@@ -33,7 +35,7 @@ benignes =["bitcoin", "bubble", "bzip2", "coremark", "dhrystone", "ffmpeg",
     "sieve", "speedtest", "stream", "stress_c", "stress_m"
 ]
 
-contadors=["r002","r003","r004","r005"]
+contadors=["r002","r003","r004","r005","r006"]
 total_de_dades=[]
 
 # Llegim tots els CSV de la carpeta datos_alebrt / (dintre de datos_albert)* (qualsevol)
@@ -56,4 +58,53 @@ df = pd.concat(total_de_dades, ignore_index=True)
 df.to_csv('dataset_complet.csv', index=False)
 
 
-#QUARTILS 
+#############################################################
+
+df= pd.read_csv("dataset_complet.csv")
+contadors=["r002","r003","r004","r005","r006"]
+
+# 1) Calcular quartils
+quartils = {}
+
+for c in contadors:
+    Q1=df[c].quantile(0.25) # INFERIOR
+    Q2=df[c].quantile(0.50) # MITJANA
+    Q3=df[c].quantile(0.75) #SUPERIOR
+    quartils[c]=(Q1, Q2, Q3)
+
+print("Quartils por contadors: ")
+for c, q in quartils.items():
+    print(c,q)
+
+
+#RECODIFICACIÓ FUNCIÓ
+def recodificar(valor, Q1, Q2, Q3):
+   if valor <= Q1: return 1 # ZONA 1
+   if valor <= Q2: return 2 # ZONA 2
+   if valor <= Q3: return 3 # ZONA 3
+   else : 4 # ZONA 4
+
+
+for c in contadors:
+    Q1,Q2,Q3 = quartils[c] # TINDREM ELS QUARTIL DEL CONTADORS R002, R003...
+    df[c+"_Q"] = df[c].apply(lambda x: recodificar(x, Q1, Q2, Q3)) # LA LAMBDA M'AJUDA DESPRES A EMPRAR LA FUNC DECOFIDICAR
+
+
+# VEURE QUE FA AIXÒ?????????????
+df["combo"] = df[[c+"_Q" for c in contadors]].apply(lambda row: tuple(row), axis=1)
+
+#MIRA LABEL BENIGNES I MALIGNES
+conteo = df.groupby(["combo", "label"]).size().unstack(fill_value=0)   # GROUPBY --> agrupa files mateix combinaciói  UNSTACK --> transfromació oer tindre colm benigne i una altre maline , per millor compració visual
+print("\n Conteo de combinaciones: ")
+print(conteo)
+
+#ORDENAR
+conteo_ordenado = conteo.sort_values(by="maligno", ascending=False)    # ORDENACI PER VEURE ELQ UARTILS QUEHAN SIGUT MALIGNES
+print(" \n Combinaciones más asociadas a malignos:")
+print(conteo_ordenado.head(10))
+
+
+
+#############################################################
+
+
