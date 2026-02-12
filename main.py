@@ -11,24 +11,9 @@ dataset_albert_zip = 'dataverse_files.zip'
 with zipfile.ZipFile(dataset_albert_zip, 'r') as zip_ref:
     zip_ref.extractall('datos_albert')
 
-
-"""
-######AQUÍ ENTENEM QUE SON EL R002 I LA ESTRUCUTRA DE CADA PETICIÓ DE AL HARDWARE######
-
-fitxer_benigne='datos_albert/bitcoin-all_perf_events.csv'
-# Carreguem el fitxer benigne
-df_mostra = pd.read_csv(fitxer_benigne)
-
-# 3. Ensenyar les primeres 5 files i les columnes
-print("--- Columnes detectades al fitxer (Aquests són els contadors) ---")
-print(df_mostra.columns.tolist())
-
-print("\n--- Primers valors del fitxer 'bitcoin' (Benigne) ---")
-print(df_mostra.head())
-"""
-
-
-#PROCESAT DE DADES I ORDERNAR EL DATASET
+#############################################################
+#         PROCESAT DE DADES I ORDERNAR EL DATASET
+#############################################################
 
 benignes =["bitcoin", "bubble", "bzip2", "coremark", "dhrystone", "ffmpeg", 
     "mandelbrot", "matrix", "mybench", "polybench", "sha256sum", 
@@ -58,6 +43,9 @@ df = pd.concat(total_de_dades, ignore_index=True)
 df.to_csv('dataset_complet.csv', index=False)
 
 
+
+#############################################################
+#                     QUARTILS + TUPLAS
 #############################################################
 
 df= pd.read_csv("dataset_complet.csv")
@@ -98,13 +86,44 @@ conteo = df.groupby(["combo", "label"]).size().unstack(fill_value=0)   # GROUPBY
 print("\n Conteo de combinaciones: ")
 print(conteo)
 
-#ORDENAR
-conteo_ordenado = conteo.sort_values(by="maligne", ascending=False)    # ORDENACI PER VEURE ELQ UARTILS QUEHAN SIGUT MALIGNES
-print(" \n Combinaciones más asociadas a malignos:")
-print(conteo_ordenado.head(10))
-
 # Exportar el dataset final amb totes les transformacions
 df.to_csv('dataset_quartils.csv', index=False)
 
 #############################################################
+#             TRACATAMENT DEL DATASET PEL MODEL
+#############################################################
 
+
+# reset_index() fa que  "combo"  pasi com columna normal
+conteo_export = conteo.reset_index()
+
+# 2. Ordes de més a mnyes perilloses
+conteo_export = conteo_export.sort_values(by="maligne", ascending=False)
+
+# 3. Exportar
+conteo_export.to_csv('resumen_frecuencias_tuplas.csv', index=False)
+
+#POSEM LA COLUMNA AMB % DE MALIGNE
+
+conteo_export['maligno_ratio'] = conteo_export['maligne'] / (conteo_export['maligne'] + conteo_export['benigne'])
+conteo_export.to_csv('dataset_final_amb_tassa_maligne.csv', index=False)
+
+#############################################################
+#                        MODEL
+#############################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                       
