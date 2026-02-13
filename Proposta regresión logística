@@ -1,0 +1,45 @@
+#########JUST A SOTA DEL CODI DEL MAIN ##################
+
+print("\n--- INICIANDO ENTRENAMIENTO DEL MODELO ---")
+
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import classification_report, confusion_matrix
+import pandas as pd
+
+# 1. Definimos las X (datos de sensores) y la y (lo que queremos predecir)
+columnas_sensores = [c + "_Q" for c in contadors] # ['r002_Q', 'r003_Q', ...] Estamos mirando las tuplas que hemos creado.
+X = df[columnas_sensores]
+
+# Convertimos 'benigne' a 0 y 'maligne' a 1 porque el modelo solo entiende números
+y = df['label'].map({'benigne': 0, 'maligne': 1}) 
+
+# 2. Dividimos en entrenamiento (80%) y prueba (20%)
+# El random_state=42 es para que siempre te den los mismos resultados al probar
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# 3. Entrenamos la Regresión Logística
+modelo = LogisticRegression()
+modelo.fit(X_train, y_train.values.ravel())
+
+# 4. Evaluamos el modelo con los datos que NO ha visto (X_test)
+y_pred = modelo.predict(X_test)
+pd.DataFrame({'y_test':y_test.values.ravel(), 'y_pred':y_pred}).T
+# --- RESULTADOS ---
+print("\n### Informe de Clasificación ###")
+# Precisión: cuántos de los que dijo que eran X, realmente eran X.
+# Recall: cuántos del total de X fue capaz de detectar.
+print(classification_report(y_test, y_pred, target_names=['Benigno', 'Maligno']))
+
+print("\n### Matriz de Confusión ###")
+# Muestra: [Aciertos Benignos, Fallos como Malignos]
+#         [Fallos como Benignos, Aciertos Malignos]
+print(confusion_matrix(y_test, y_pred))
+
+# 5. BONUS: ¿Qué sensor es más importante?
+import numpy as np
+import matplotlib.pyplot as plt
+
+importancia = modelo.coef_[0]
+for i, v in enumerate(importancia):
+    print(f'Sensor {columnas_sensores[i]}: Score: {v:.4f}')
