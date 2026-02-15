@@ -1,0 +1,34 @@
+from sklearn.model_selection import train_test_split
+from sklearn.neural_network import MLPClassifier
+from sklearn.metrics import classification_report, confusion_matrix
+import pandas as pd
+
+print("\n--- INICIANDO MODELO MLP (RED NEURONAL) ---")
+
+X = df[[c + "_Q" for c in contadors]]
+y = df['label'].map({'benigne': 0, 'maligne': 1})
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+# 1. Configuración del MLP
+# hidden_layer_sizes=(10, 5) significa:
+# - Capa oculta 1: 10 neuronas
+# - Capa oculta 2: 5 neuronas
+# max_iter=500: cuántas vueltas le da a los datos para aprender
+mlp = MLPClassifier(hidden_layer_sizes=(10, 5), max_iter=500, random_state=42)
+
+# 2. Entrenamiento
+# Usamos los mismos X_train e y_train que ya tenías
+mlp.fit(X_train, y_train.values.ravel())
+
+# 3. Predicciones
+y_pred_mlp = mlp.predict(X_test)
+
+# 4. Evaluación (usando tu método de tabla)
+report_mlp = classification_report(y_test, y_pred_mlp, target_names=['Benigne', 'Maligne'], output_dict=True)
+df_report_mlp = pd.DataFrame(report_mlp).transpose()
+
+print("\n### Informe MLP (Red Neuronal) ###")
+print(df_report_mlp.iloc[:-3])
+
+# Comparativa visual rápida (primeros 10)
+print("\n### Realidad vs MLP ###")
+print(pd.DataFrame({'Real': y_test.values.ravel(), 'MLP': y_pred_mlp}).head(10).T)
