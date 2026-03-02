@@ -1,0 +1,133 @@
+import pandas as pd
+import zipfile
+import glob
+import os
+import numpy as np
+from itertools import product
+
+#SEPAREM EL ZIP 
+
+dataset_albert_zip = 'datos_albert.zip'
+with zipfile.ZipFile(dataset_albert_zip, 'r') as zip_ref:
+    zip_ref.extractall('datos_albert')
+
+#############################################################
+#         PROCESAT DE DADES I ORDERNAR EL DATASET
+#############################################################
+
+benignes =["bitcoin", "bubble", "bzip2", "coremark", "dhrystone", "ffmpeg", 
+    "mandelbrot", "matrix", "mybench", "polybench", "sha256sum", 
+    "sieve", "speedtest", "stream", "stress_c", "stress_m"
+]
+
+contadors=["r002","r003","r004","r005","r006"]
+total_de_dades=[]
+
+# Llegim tots els CSV de la carpeta datos_alebrt / (dintre de datos_albert)* (qualsevol)
+for fitxer in glob.glob("datos_albert/*.csv"):
+   
+    df_temp = pd.read_csv(fitxer, skiprows=[1])
+    # Netegem els noms de les columnes per tenir només el codi rXXX
+    df_temp.columns = [c.split('/')[0].strip() if '/' in c else c for c in df_temp.columns]
+    
+    # Mirem el nom del programa (abans del guió) per posar l'etiqueta
+    nom_prog = os.path.basename(fitxer).split("-")[0]
+    df_temp['label'] = 'benigne' if nom_prog in benignes else 'maligne'
+    
+    # Guardem només els 5 sensors i l'etiqueta per estalviar memòria
+    total_de_dades.append(df_temp[contadors + ['label']])
+
+# Creem la total_de_dades unificada
+df = pd.concat(total_de_dades, ignore_index=True)
+#Vull mirar si el dataset es coherent
+df.to_csv('dataset_complet.csv', index=False)
+
+
+
+#############################################################
+#                     QUARTILS + TUPLAS
+#############################################################
+
+df= pd.read_csv("dataset_complet.csv")
+contadors=["r002","r003","r004","r005","r006"]
+
+# 1) Calcular quartils
+quartils = {}
+
+for c in contadors:
+    Q1=df[c].quantile(0.25) # INFERIOR
+    Q2=df[c].quantile(0.50) # MITJANA
+    Q3=df[c].quantile(0.75) #SUPERIOR
+    quartils[c]=(Q1, Q2, Q3)
+
+print("Quartils por contadors: ")
+for c, q in quartils.items():
+    print(c,q)
+
+
+#RECODIFICACIÓ FUNCIÓ
+def recodificar(valor, Q1, Q2, Q3):
+   if valor <= Q1: return 1 # ZONA 1
+   if valor <= Q2: return 2 # ZONA 2
+   if valor <= Q3: return 3 # ZONA 3
+   else : return 4 # ZONA 4
+
+
+for c in contadors:
+    Q1,Q2,Q3 = quartils[c] # TINDREM ELS QUARTIL DEL CONTADORS R002, R003...
+    df[c+"_Q"] = df[c].apply(lambda x: recodificar(x, Q1, Q2, Q3)) # LA LAMBDA M'AJUDA DESPRES A EMPRAR LA FUNC DECOFIDICAR
+
+
+# Crear columna amb la combinació
+df["combo"] = df[[c+"_Q" for c in contadors]].apply(lambda row: tuple(row), axis=1)
+
+#MIRA LABEL BENIGNES I MALIGNES
+conteo = df.groupby(["combo", "label"]).size().unstack(fill_value=0)   # GROUPBY --> agrupa files mateix combinaciói  UNSTACK --> transfromació oer tindre colm benigne i una altre maline , per millor compració visual
+print("\n Conteo de combinaciones: ")
+print(conteo)
+
+# Exportar el dataset final amb totes les transformacions
+df.to_csv('dataset_quartils.csv', index=False)
+#############################################################
+#            IMPLEMENTACIÓN DE GRADIENT BOOSTING
+#############################################################
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.metrics import classification_report, confusion_matrix
+
+# 1. Preparar los datos
+# Usamos las columnas recodificadas (_Q) como "Features" (X)
+X = df[[c+"_Q" for c in contadors]]
+# La etiqueta "label" es nuestro objetivo (y)
+y = df['label']
+
+# 2. Dividir en conjunto de entrenamiento y prueba (80% tren, 20% test)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+print("\n" + "="*40)
+print("ENTRENANDO MODELO GRADIENT BOOSTING...")
+print("="*40)
+
+# 3. Crear y entrenar el modelo
+# n_estimators=100 significa que usaremos 100 "aprendices" (árboles)
+model = GradientBoostingClassifier(n_estimators=100, learning_rate=0.5, max_depth=4, random_state=42)
+model.fit(X_train, y_train)
+
+# 4. Evaluación
+y_pred = model.predict(X_test)
+
+print("\nMatriz de Confusión:")
+print(confusion_matrix(y_test, y_pred))
+
+print("\nInforme de Clasificación:")
+print(classification_report(y_test, y_pred))
+
+# 5. Importancia de los sensores
+importancias = pd.DataFrame({'sensor': X.columns, 'importancia': model.feature_importances_})
+print("\nImportancia de cada sensor en la decisión:")
+print(importancias.sort_values(by='importancia', ascending=False))
+
+#para comprovar el overfitting
+# Compara la precisión en entrenamiento vs prueba
+print(f"Precisión Entrenamiento: {model.score(X_train, y_train):.4f}")
+print(f"Precisión Prueba: {model.score(X_test, y_test):.4f}")
