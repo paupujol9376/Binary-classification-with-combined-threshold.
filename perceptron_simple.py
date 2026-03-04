@@ -6,7 +6,7 @@ from sklearn.linear_model import Perceptron
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, classification_report,confusion_matrix
 from sklearn.preprocessing import StandardScaler
-
+import time
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import confusion_matrix
@@ -15,9 +15,6 @@ from sklearn.metrics import confusion_matrix
 #             TRACATAMENT DEL DATASET PEL MODEL             #         
 #############################################################
 
-#ELIMINAR LA ZONA GRIS 0,4 a 0,7
-#CAL ARREGLAR EL DATASET
-#DESFAREM EL COMBO
 
 df_resum=pd.read_csv("dataset_final_amb_tassa_maligne.csv")
 
@@ -30,12 +27,14 @@ df_resum[noms_sensors] = pd.DataFrame(df_resum['combo'].tolist(), index=df_resum
 
 df_perceptro =df_resum.copy()
 # Ara definim les etiquetes (el 0.5 ara és una frontera neta perquè no hi ha res al mig)
-df_perceptro['label'] = (df_perceptro['maligno_ratio'] > 0.4).astype(int)
+df_perceptro['label'] = (df_perceptro['maligno_ratio'] > 0.5).astype(int)
 
 
 columnes_finals= noms_sensors + ['label']
 df_perceptro=df_perceptro[columnes_finals]
 df_perceptro.to_csv('dataset_perceptro.csv',index=False)
+
+#Aquí veiem que es dectean més malignes i per tant veiem que per sobre 0,5 hi ha més tramas aparentment malignes
 
 ###########################
 # Recompte de mostres 
@@ -48,12 +47,10 @@ print(f"\nPercentatges:\n{percentatges.map('{:.2f}%'.format)}")
 
 # Visualització ràpida
 sns.countplot(x='label', data=df_perceptro)
-plt.title('Distribució: Benignes vs Malignes')
+plt.title('Distribució: Asignats com  a Benignes vs Malignes')
 plt.show()
 
 #traient la zona gris i amb dataset igualat el model millora
-###########################
-
 
 #############################################################
 #                    PERCEPTRÓN SIPLE                       #
@@ -70,8 +67,16 @@ X_scaled = scalat.fit_transform(X)
 # 1. Separem en train i test
 X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
 
-model = Perceptron(max_iter=5000, tol=1e-4,eta0=0.1,class_weight='balanced', random_state=42)#El max_iter es el nombre d'intets,tol és la precisió d'aturada, eta la velocitat per apendre
+ini=time.time()
+model = Perceptron(max_iter=5000,  tol=1e-4, eta0=0.1, class_weight='balanced',  random_state=42,penalty='l2',  alpha=0.001 )    
+
+#model = Perceptron(max_iter=5000, tol=1e-4,eta0=0.1,class_weight='balanced', random_state=42)#El max_iter es el nombre d'intets,tol és la precisió d'aturada, eta la velocitat per apendre
 model.fit(X_train, y_train)
+fin=time.time()
+
+duration = fin-ini
+
+print(f"EL ENTRENAMENT HA DURAT {duration:.4f} SEGONS")
 
 #############################################################
 #                    PESOS I AVALUACIÓ                      #
